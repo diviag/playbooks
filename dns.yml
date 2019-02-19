@@ -1,0 +1,24 @@
+---
+ - hosts: aa    #in host file write server ip which you want to make dns server
+   tasks:
+    - name: installing packages
+      yum: name=bind state=present
+    - shell: cp /var/named/named.localhost  /var/named/dividb
+    - shell: mv  /etc/named.conf /etc/named.conf.back
+    - file: path=/etc/named.conf state=touch 
+    - blockinfile:
+        path: /etc/ssh/sshd_config
+        block: |
+          options{
+                directory "/var/named";
+          };
+          zone "divi.com" IN{
+                file "dividb";
+                type master;
+          };
+    - lineinfile: path=/var/named/mdhackdb  line=@       NS    dns.divi.com. backup=yes
+    - lineinfile: path=/var/named/mdhackdb line=dns.divi.com. A 192.168.10.66
+    - lineinfile: path=/var/named/mdhackdb line=lab.divi.com. A 192.168.10.66
+    - shell: for i in `seq 10` ;  do ; echo "cont$i IN A 192.168.10.9$i" >>dividb ; done
+    - shell: chown named:named /var/named/dividb
+    - service: name=named state=restarted enabled=yes
